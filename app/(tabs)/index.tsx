@@ -1,4 +1,4 @@
-import { useEmbeddedEthereumWallet, useLoginWithEmail, usePrivy } from '@privy-io/expo';
+import { useEmbeddedEthereumWallet, useEmbeddedSolanaWallet, useLoginWithEmail, usePrivy } from '@privy-io/expo';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 
@@ -8,7 +8,8 @@ import { ThemedView } from '@/components/ThemedView';
 export default function HomeScreen() {
   const { isReady, user, logout } = usePrivy();
   const { sendCode, loginWithCode } = useLoginWithEmail();
-  const { wallets } = useEmbeddedEthereumWallet();
+  const { wallets: ethereumWallets } = useEmbeddedEthereumWallet();
+  const { wallets: solanaWallets } = useEmbeddedSolanaWallet();
   const [showTimeoutMessage, setShowTimeoutMessage] = useState(false);
   
   // Email login state
@@ -90,51 +91,73 @@ export default function HomeScreen() {
     }
   };
 
-  // Get wallet address
+  // Get wallet address (try Ethereum first, then Solana)
   const getWalletAddress = async () => {
-    if (!wallets || wallets.length === 0) {
-      Alert.alert('Error', 'No embedded wallet found');
-      return;
+    if (ethereumWallets && ethereumWallets.length > 0) {
+      try {
+        const provider = await ethereumWallets[0].getProvider();
+        const accounts = await provider.request({
+          method: 'eth_requestAccounts'
+        });
+        setWalletAddress(accounts[0]);
+        Alert.alert('Success', `Ethereum Address: ${accounts[0]}`);
+        return;
+      } catch (error) {
+        console.error('Get Ethereum address error:', error);
+      }
     }
 
-    try {
-      const provider = await wallets[0].getProvider();
-      const accounts = await provider.request({
-        method: 'eth_requestAccounts'
-      });
-      setWalletAddress(accounts[0]);
-      Alert.alert('Success', `Wallet Address: ${accounts[0]}`);
-    } catch (error) {
-      console.error('Get address error:', error);
-      Alert.alert('Error', 'Failed to get wallet address');
+    if (solanaWallets && solanaWallets.length > 0) {
+      try {
+        const address = solanaWallets[0].address;
+        setWalletAddress(address);
+        Alert.alert('Success', `Solana Address: ${address}`);
+        return;
+      } catch (error) {
+        console.error('Get Solana address error:', error);
+      }
     }
+
+    Alert.alert('Error', 'No embedded wallet found');
   };
 
-  // Sign a message
+  // Sign a message (try with available wallet)
   const signMessage = async () => {
-    if (!wallets || wallets.length === 0) {
-      Alert.alert('Error', 'No embedded wallet found');
-      return;
-    }
-
     if (!walletAddress) {
       Alert.alert('Error', 'Please get wallet address first');
       return;
     }
 
-    try {
-      const provider = await wallets[0].getProvider();
-      const message = 'Hello from Privy React Native!';
-      const signature = await provider.request({
-        method: 'personal_sign',
-        params: [message, walletAddress]
-      });
-      setSignature(signature);
-      Alert.alert('Success', `Message signed! Signature: ${signature.substring(0, 20)}...`);
-    } catch (error) {
-      console.error('Sign message error:', error);
-      Alert.alert('Error', 'Failed to sign message');
+    const message = 'Hello from Privy React Native!';
+
+    // Try Ethereum signing first
+    if (ethereumWallets && ethereumWallets.length > 0) {
+      try {
+        const provider = await ethereumWallets[0].getProvider();
+        const signature = await provider.request({
+          method: 'personal_sign',
+          params: [message, walletAddress]
+        });
+        setSignature(signature);
+        Alert.alert('Success', `Ethereum message signed! Signature: ${signature.substring(0, 20)}...`);
+        return;
+      } catch (error) {
+        console.error('Ethereum sign message error:', error);
+      }
     }
+
+    // Solana signing (basic implementation)
+    if (solanaWallets && solanaWallets.length > 0) {
+      try {
+        // For now, just show that Solana wallet is available
+        Alert.alert('Info', 'Solana wallet found but signing not implemented in this demo');
+        return;
+      } catch (error) {
+        console.error('Solana wallet error:', error);
+      }
+    }
+
+    Alert.alert('Error', 'Failed to sign message with any wallet');
   };
 
   // Wait for Privy to be ready before rendering main content
@@ -175,9 +198,11 @@ export default function HomeScreen() {
               <ThemedText style={styles.userInfo}>
                 User ID: {user.id}
               </ThemedText>
-              {wallets && wallets.length > 0 && (
+              {((ethereumWallets && ethereumWallets.length > 0) || (solanaWallets && solanaWallets.length > 0)) && (
                 <ThemedText style={styles.userInfo}>
-                  Embedded Wallets: {wallets.length} found
+                  Embedded Wallets: {(ethereumWallets?.length || 0) + (solanaWallets?.length || 0)} found
+                  {ethereumWallets && ethereumWallets.length > 0 && ` (${ethereumWallets.length} Ethereum)`}
+                  {solanaWallets && solanaWallets.length > 0 && ` (${solanaWallets.length} Solana)`}
                 </ThemedText>
               )}
               <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>

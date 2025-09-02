@@ -27,6 +27,16 @@ export default function RootLayout() {
     <PrivyProvider 
       appId="cmf2loun800mkkz0bwm8vtcgw" 
       clientId="client-WY6QWrE3HcGGuT6m1kPS53ioJQzZ6nwBftieJCwDozC3p"
+      config={{
+        embedded: {
+          ethereum: {
+            createOnLogin: 'users-without-wallets',
+          },
+          solana: {
+            createOnLogin: 'users-without-wallets',
+          },
+        },
+      }}
     >
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack>
