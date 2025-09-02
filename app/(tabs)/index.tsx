@@ -1,10 +1,7 @@
 import { useEmbeddedEthereumWallet, useLoginWithEmail, usePrivy } from '@privy-io/expo';
-import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
@@ -161,171 +158,154 @@ export default function HomeScreen() {
   }
 
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome to Privy App!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Privy Authentication</ThemedText>
-        <ThemedText>
-          Status: <ThemedText type="defaultSemiBold">{user ? 'Authenticated' : 'Not Authenticated'}</ThemedText>
-        </ThemedText>
-        {user && (
-          <>
-            <ThemedText>
-              User ID: <ThemedText type="defaultSemiBold">{user.id}</ThemedText>
-            </ThemedText>
-            {wallets && wallets.length > 0 && (
-              <ThemedText>
-                Embedded Wallets: <ThemedText type="defaultSemiBold">{wallets.length} found</ThemedText>
-              </ThemedText>
-            )}
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-              <ThemedText style={styles.buttonText}>Logout</ThemedText>
-            </TouchableOpacity>
-          </>
-        )}
+    <ThemedView style={styles.container}>
+      <ThemedView style={styles.header}>
+        <ThemedText type="title">Privy App</ThemedText>
       </ThemedView>
 
-      {!user && (
-        <ThemedView style={styles.stepContainer}>
-          <ThemedText type="subtitle">Email Login</ThemedText>
-          <TextInput
-            style={styles.input}
-            value={email}
-            onChangeText={setEmail}
-            placeholder="Enter your email address"
-            placeholderTextColor="#666"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            editable={!codeSent && !isLoading}
-          />
+      <ThemedView style={styles.content}>
+        <ThemedView style={styles.section}>
+          <ThemedText type="subtitle">Authentication Status</ThemedText>
+          <ThemedText style={styles.statusText}>
+            {user ? 'Authenticated' : 'Not Authenticated'}
+          </ThemedText>
           
-          {codeSent && (
+          {user && (
+            <>
+              <ThemedText style={styles.userInfo}>
+                User ID: {user.id}
+              </ThemedText>
+              {wallets && wallets.length > 0 && (
+                <ThemedText style={styles.userInfo}>
+                  Embedded Wallets: {wallets.length} found
+                </ThemedText>
+              )}
+              <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                <ThemedText style={styles.buttonText}>Logout</ThemedText>
+              </TouchableOpacity>
+            </>
+          )}
+        </ThemedView>
+
+        {!user && (
+          <ThemedView style={styles.section}>
+            <ThemedText type="subtitle">Email Login</ThemedText>
             <TextInput
               style={styles.input}
-              value={code}
-              onChangeText={setCode}
-              placeholder="Enter OTP code"
+              value={email}
+              onChangeText={setEmail}
+              placeholder="Enter your email address"
               placeholderTextColor="#666"
-              keyboardType="number-pad"
-              editable={!isLoading}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              editable={!codeSent && !isLoading}
             />
-          )}
+            
+            {codeSent && (
+              <TextInput
+                style={styles.input}
+                value={code}
+                onChangeText={setCode}
+                placeholder="Enter OTP code"
+                placeholderTextColor="#666"
+                keyboardType="number-pad"
+                editable={!isLoading}
+              />
+            )}
 
-          <TouchableOpacity 
-            style={[styles.button, isLoading && styles.buttonDisabled]} 
-            onPress={codeSent ? handleLogin : handleSendCode}
-            disabled={isLoading}
-          >
-            <ThemedText style={styles.buttonText}>
-              {isLoading ? 'Loading...' : (codeSent ? 'Login with Code' : 'Send OTP Code')}
-            </ThemedText>
-          </TouchableOpacity>
-
-          {codeSent && (
             <TouchableOpacity 
-              style={styles.secondaryButton} 
-              onPress={() => {
-                setCodeSent(false);
-                setCode('');
-              }}
+              style={[styles.button, isLoading && styles.buttonDisabled]} 
+              onPress={codeSent ? handleLogin : handleSendCode}
+              disabled={isLoading}
             >
-              <ThemedText style={styles.secondaryButtonText}>Back to Email</ThemedText>
+              <ThemedText style={styles.buttonText}>
+                {isLoading ? 'Loading...' : (codeSent ? 'Login with Code' : 'Send OTP Code')}
+              </ThemedText>
             </TouchableOpacity>
-          )}
-        </ThemedView>
-      )}
 
-      {user && (
-        <ThemedView style={styles.stepContainer}>
-          <ThemedText type="subtitle">Embedded Wallet</ThemedText>
-          
-          {walletAddress && (
-            <ThemedText style={styles.walletInfo}>
-              Address: <ThemedText type="defaultSemiBold">{walletAddress.substring(0, 10)}...{walletAddress.substring(walletAddress.length - 8)}</ThemedText>
-            </ThemedText>
-          )}
+            {codeSent && (
+              <TouchableOpacity 
+                style={styles.secondaryButton} 
+                onPress={() => {
+                  setCodeSent(false);
+                  setCode('');
+                }}
+              >
+                <ThemedText style={styles.secondaryButtonText}>Back to Email</ThemedText>
+              </TouchableOpacity>
+            )}
+          </ThemedView>
+        )}
 
-          <TouchableOpacity style={styles.button} onPress={getWalletAddress}>
-            <ThemedText style={styles.buttonText}>Get Wallet Address</ThemedText>
-          </TouchableOpacity>
+        {user && (
+          <ThemedView style={styles.section}>
+            <ThemedText type="subtitle">Embedded Wallet</ThemedText>
+            
+            {walletAddress && (
+              <ThemedText style={styles.walletInfo}>
+                Address: {walletAddress.substring(0, 10)}...{walletAddress.substring(walletAddress.length - 8)}
+              </ThemedText>
+            )}
 
-          <TouchableOpacity 
-            style={[styles.button, !walletAddress && styles.buttonDisabled]} 
-            onPress={signMessage}
-            disabled={!walletAddress}
-          >
-            <ThemedText style={styles.buttonText}>Sign Message</ThemedText>
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.button} onPress={getWalletAddress}>
+              <ThemedText style={styles.buttonText}>Get Wallet Address</ThemedText>
+            </TouchableOpacity>
 
-          {signature && (
-            <ThemedText style={styles.signatureInfo}>
-              Signature: <ThemedText type="defaultSemiBold">{signature.substring(0, 20)}...</ThemedText>
-            </ThemedText>
-          )}
-        </ThemedView>
-      )}
-      
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
+            <TouchableOpacity 
+              style={[styles.button, !walletAddress && styles.buttonDisabled]} 
+              onPress={signMessage}
+              disabled={!walletAddress}
+            >
+              <ThemedText style={styles.buttonText}>Sign Message</ThemedText>
+            </TouchableOpacity>
+
+            {signature && (
+              <ThemedText style={styles.signatureInfo}>
+                Signature: {signature.substring(0, 20)}...
+              </ThemedText>
+            )}
+          </ThemedView>
+        )}
       </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  header: {
+    padding: 20,
+    paddingTop: 60,
     alignItems: 'center',
-    gap: 8,
+    backgroundColor: '#007AFF',
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  content: {
+    flex: 1,
+    padding: 20,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  section: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  statusText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginVertical: 8,
+  },
+  userInfo: {
+    fontSize: 14,
+    marginVertical: 4,
+    color: '#666',
   },
   loadingContainer: {
     flex: 1,
@@ -369,7 +349,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 12,
   },
   secondaryButton: {
     padding: 10,
