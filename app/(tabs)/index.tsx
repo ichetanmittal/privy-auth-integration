@@ -1,5 +1,7 @@
+import { usePrivy } from '@privy-io/expo';
 import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Platform, StyleSheet } from 'react-native';
 
 import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
@@ -7,6 +9,43 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
 export default function HomeScreen() {
+  const { isReady, user } = usePrivy();
+  const [showTimeoutMessage, setShowTimeoutMessage] = useState(false);
+
+  console.log('Privy Status:', { isReady, user });
+
+  // Add timeout to detect if Privy is stuck
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (!isReady) {
+        console.log('Privy initialization timeout - this might be expected in development');
+        setShowTimeoutMessage(true);
+      }
+    }, 10000); // 10 second timeout
+
+    return () => clearTimeout(timeout);
+  }, [isReady]);
+
+  // Wait for Privy to be ready before rendering main content
+  if (!isReady) {
+    return (
+      <ThemedView style={styles.loadingContainer}>
+        <ActivityIndicator size="large" />
+        <ThemedText style={styles.loadingText}>
+          {showTimeoutMessage ? 'Privy taking longer than expected...' : 'Initializing Privy...'}
+        </ThemedText>
+        <ThemedText style={styles.debugText}>isReady: {String(isReady)}</ThemedText>
+        <ThemedText style={styles.debugText}>User: {user ? 'Present' : 'None'}</ThemedText>
+        {showTimeoutMessage && (
+          <>
+            <ThemedText style={styles.debugText}>⚠️ Development Mode Detected</ThemedText>
+            <ThemedText style={styles.debugText}>Privy may not initialize in dev</ThemedText>
+          </>
+        )}
+      </ThemedView>
+    );
+  }
+
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
@@ -17,8 +56,19 @@ export default function HomeScreen() {
         />
       }>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
+        <ThemedText type="title">Welcome to Privy App!</ThemedText>
         <HelloWave />
+      </ThemedView>
+      <ThemedView style={styles.stepContainer}>
+        <ThemedText type="subtitle">Privy Status</ThemedText>
+        <ThemedText>
+          Authentication Status: <ThemedText type="defaultSemiBold">{user ? 'Authenticated' : 'Not Authenticated'}</ThemedText>
+        </ThemedText>
+        {user && (
+          <ThemedText>
+            User ID: <ThemedText type="defaultSemiBold">{user.id}</ThemedText>
+          </ThemedText>
+        )}
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Step 1: Try it</ThemedText>
@@ -71,5 +121,18 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     position: 'absolute',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+  },
+  debugText: {
+    fontSize: 12,
+    opacity: 0.7,
   },
 });
